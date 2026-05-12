@@ -6,7 +6,7 @@ dotenv.config();
 import express from "express";
 import pkg from "pg";
 import authRoutes from "./routes/auth.js";
-
+import { authMiddleware } from "./middleware/authMiddleware.js";
 const { Pool } = pkg;
 
 const pool = new Pool({
@@ -43,6 +43,12 @@ app.get("/", async (req, res) => {
   }
 });
 
+app.get("/protected", authMiddleware, (req, res) => {
+  res.json({
+    message: "Protected route accessed successfully",
+    user: req.user,
+  });
+});
 app.listen(5000, () => {
   console.log("Server running on port 5000");
 });
