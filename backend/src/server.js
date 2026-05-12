@@ -1,36 +1,37 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 import dotenv from "dotenv";
-dotenv.config(); 
+dotenv.config();
 
 import express from "express";
 import pkg from "pg";
+import authRoutes from "./routes/auth.js";
 
 const { Pool } = pkg;
-
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false, // fixes self-signed cert error
+    rejectUnauthorized: false,
   },
 });
 
 const app = express();
 
+app.use(express.json());
+app.use("/auth", authRoutes);
 
 console.log("DATABASE_URL:", process.env.DATABASE_URL);
-
 
 (async () => {
   try {
     const client = await pool.connect();
-    console.log(" Connected to Supabase");
+    console.log("Connected to Supabase");
     client.release();
   } catch (err) {
-    console.error(" DB CONNECTION ERROR:", err);
+    console.error("DB CONNECTION ERROR:", err);
   }
 })();
-
 
 app.get("/", async (req, res) => {
   try {
@@ -41,7 +42,6 @@ app.get("/", async (req, res) => {
     res.status(500).send("Database connection failed");
   }
 });
-
 
 app.listen(5000, () => {
   console.log("Server running on port 5000");

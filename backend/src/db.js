@@ -1,5 +1,11 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import pkg from "pg";
+
 const { Pool } = pkg;
+
+console.log("DB.JS DATABASE_URL:", process.env.DATABASE_URL);
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -7,16 +13,5 @@ const pool = new Pool({
     rejectUnauthorized: false,
   },
 });
-
-
-(async () => {
-  try {
-    const client = await pool.connect();
-    console.log(" Connected to Supabase");
-    client.release();
-  } catch (err) {
-    console.error(" DB CONNECTION ERROR:", err);
-  }
-})();
 
 export default pool;
