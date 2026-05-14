@@ -45,6 +45,22 @@ router.post(
       }
 
       const patient_id = patientResult.rows[0].id;
+      const highRiskKeywords = [
+  "chest pain",
+  "difficulty breathing",
+  "severe bleeding",
+  "stroke",
+  "suicidal",
+  "unconscious",
+  "high fever",
+  "seizure"
+];
+
+const isHighRisk = reason
+  ? highRiskKeywords.some(keyword =>
+      reason.toLowerCase().includes(keyword)
+    )
+  : false;
 
       const newAppointment = await pool.query(
         `
@@ -72,9 +88,15 @@ router.post(
       );
 
       res.status(201).json({
-        message: "Appointment booked successfully",
-        appointment: newAppointment.rows[0],
-      });
+  message: isHighRisk
+    ? "Appointment booked successfully - HIGH RISK ALERT"
+    : "Appointment booked successfully",
+  appointment: newAppointment.rows[0],
+  high_risk: isHighRisk,
+  alert_message: isHighRisk
+    ? "URGENT: High-risk patient case detected"
+    : null
+});
 
     } catch (error) {
       console.error("BOOK APPOINTMENT ERROR:", error);
@@ -123,6 +145,49 @@ router.get(
       console.error("GET APPOINTMENTS ERROR:", error);
       res.status(500).json({
         message: "Failed to retrieve appointments",
+        error: error.message,
+      });
+    }
+  }
+);
+router.get(
+  "/doctor",
+  authMiddleware,
+  doctorOnly,
+  async (req, res) => {
+    try {
+      const doctorResult = await pool.query(
+        "SELECT id FROM doctors WHERE user_id = $1",
+        [req.user.id]
+      );
+
+      if (doctorResult.rows.length === 0) {
+        return res.status(404).json({
+          message: "Doctor profile not found",
+        });
+      }
+
+      const doctor_id = doctorResult.rows[0].id;
+
+      const appointments = await pool.query(
+        `
+        SELECT *
+        FROM appointments
+        WHERE doctor_id = $1
+        ORDER BY appointment_date ASC, appointment_time ASC
+        `,
+        [doctor_id]
+      );
+
+      res.json({
+        message: "Doctor appointments retrieved successfully",
+        appointments: appointments.rows,
+      });
+
+    } catch (error) {
+      console.error("DOCTOR APPOINTMENTS ERROR:", error);
+      res.status(500).json({
+        message: "Failed to retrieve doctor appointments",
         error: error.message,
       });
     }
