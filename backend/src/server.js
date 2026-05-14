@@ -7,6 +7,7 @@ import express from "express";
 import pkg from "pg";
 import authRoutes from "./routes/auth.js";
 import { authMiddleware } from "./middleware/authMiddleware.js";
+import appointmentRoutes from "./routes/appointments.js";
 const { Pool } = pkg;
 
 const pool = new Pool({
@@ -20,7 +21,7 @@ const app = express();
 
 app.use(express.json());
 app.use("/auth", authRoutes);
-
+app.use("/appointments", appointmentRoutes);
 console.log("DATABASE_URL:", process.env.DATABASE_URL);
 
 (async () => {
