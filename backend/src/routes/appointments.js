@@ -85,5 +85,47 @@ router.post(
     }
   }
 );
+router.get(
+  "/",
+  authMiddleware,
+  patientOnly,
+  async (req, res) => {
+    try {
+      const patientResult = await pool.query(
+        "SELECT id FROM patients WHERE user_id = $1",
+        [req.user.id]
+      );
 
+      if (patientResult.rows.length === 0) {
+        return res.status(404).json({
+          message: "Patient profile not found",
+        });
+      }
+
+      const patient_id = patientResult.rows[0].id;
+
+      const appointments = await pool.query(
+        `
+        SELECT *
+        FROM appointments
+        WHERE patient_id = $1
+        ORDER BY appointment_date ASC, appointment_time ASC
+        `,
+        [patient_id]
+      );
+
+      res.json({
+        message: "Appointments retrieved successfully",
+        appointments: appointments.rows,
+      });
+
+    } catch (error) {
+      console.error("GET APPOINTMENTS ERROR:", error);
+      res.status(500).json({
+        message: "Failed to retrieve appointments",
+        error: error.message,
+      });
+    }
+  }
+);
 export default router;
