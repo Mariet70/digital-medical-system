@@ -193,4 +193,77 @@ router.get(
     }
   }
 );
+router.patch(
+  "/:id",
+  authMiddleware,
+  doctorOnly,
+  async (req, res) => {
+    try {
+      const { status } = req.body;
+      const { id } = req.params;
+
+      const allowedStatuses = [
+        "confirmed",
+        "cancelled",
+        "completed"
+      ];
+
+      if (!allowedStatuses.includes(status)) {
+        return res.status(400).json({
+          message: "Invalid appointment status",
+        });
+      }
+
+      const doctorResult = await pool.query(
+        "SELECT id FROM doctors WHERE user_id = $1",
+        [req.user.id]
+      );
+
+      if (doctorResult.rows.length === 0) {
+        return res.status(404).json({
+          message: "Doctor profile not found",
+        });
+      }
+
+      const doctor_id = doctorResult.rows[0].id;
+
+      const appointmentCheck = await pool.query(
+        `
+        SELECT *
+        FROM appointments
+        WHERE id = $1 AND doctor_id = $2
+        `,
+        [id, doctor_id]
+      );
+
+      if (appointmentCheck.rows.length === 0) {
+        return res.status(404).json({
+          message: "Appointment not found or unauthorized",
+        });
+      }
+
+      const updatedAppointment = await pool.query(
+        `
+        UPDATE appointments
+        SET status = $1
+        WHERE id = $2
+        RETURNING *
+        `,
+        [status, id]
+      );
+
+      res.json({
+        message: "Appointment updated successfully",
+        appointment: updatedAppointment.rows[0],
+      });
+
+    } catch (error) {
+      console.error("UPDATE APPOINTMENT ERROR:", error);
+      res.status(500).json({
+        message: "Failed to update appointment",
+        error: error.message,
+      });
+    }
+  }
+);
 export default router;
