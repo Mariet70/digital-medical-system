@@ -8,6 +8,7 @@ import pkg from "pg";
 import authRoutes from "./routes/auth.js";
 import { authMiddleware } from "./middleware/authMiddleware.js";
 import appointmentRoutes from "./routes/appointments.js";
+import medicalRecordsRoutes from "./routes/medicalRecords.js";
 const { Pool } = pkg;
 
 const pool = new Pool({
@@ -22,6 +23,7 @@ const app = express();
 app.use(express.json());
 app.use("/auth", authRoutes);
 app.use("/appointments", appointmentRoutes);
+app.use("/medical-records", medicalRecordsRoutes);
 console.log("DATABASE_URL:", process.env.DATABASE_URL);
 
 (async () => {
