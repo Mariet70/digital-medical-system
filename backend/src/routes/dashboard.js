@@ -2,12 +2,13 @@ import express from "express";
 import pool from "../db.js";
 import {
   authMiddleware,
-  doctorOnly
+  doctorOnly,
+  patientOnly
 } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// DOCTOR DASHBOARD 
+// DOCTOR DASHBOARD
 router.get(
   "/doctor",
   authMiddleware,
@@ -77,6 +78,67 @@ router.get(
 
     } catch (error) {
       console.error("DOCTOR DASHBOARD ERROR:", error);
+      res.status(500).json({
+        message: "Failed to retrieve dashboard",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// PATIENT DASHBOARD
+router.get(
+  "/patient",
+  authMiddleware,
+  patientOnly,
+  async (req, res) => {
+    try {
+      const patientResult = await pool.query(
+        "SELECT * FROM patients WHERE user_id = $1",
+        [req.user.id]
+      );
+
+      if (patientResult.rows.length === 0) {
+        return res.status(404).json({
+          message: "Patient profile not found",
+        });
+      }
+
+      const patient = patientResult.rows[0];
+      const patient_id = patient.id;
+
+      const upcomingAppointments = await pool.query(
+        `
+        SELECT COUNT(*)
+        FROM appointments
+        WHERE patient_id = $1
+        AND appointment_date >= CURRENT_DATE
+        `,
+        [patient_id]
+      );
+
+      const totalMedicalRecords = await pool.query(
+        "SELECT COUNT(*) FROM medical_records WHERE patient_id = $1",
+        [patient_id]
+      );
+
+      const totalPrescriptions = await pool.query(
+        "SELECT COUNT(*) FROM prescriptions WHERE patient_id = $1",
+        [patient_id]
+      );
+
+      res.json({
+        message: "Patient dashboard retrieved successfully",
+        dashboard: {
+          upcoming_appointments: Number(upcomingAppointments.rows[0].count),
+          total_medical_records: Number(totalMedicalRecords.rows[0].count),
+          total_prescriptions: Number(totalPrescriptions.rows[0].count),
+          emergency_contact_configured: !!patient.emergency_contact_name
+        }
+      });
+
+    } catch (error) {
+      console.error("PATIENT DASHBOARD ERROR:", error);
       res.status(500).json({
         message: "Failed to retrieve dashboard",
         error: error.message,
