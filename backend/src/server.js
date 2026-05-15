@@ -10,6 +10,7 @@ import { authMiddleware } from "./middleware/authMiddleware.js";
 import appointmentRoutes from "./routes/appointments.js";
 import medicalRecordsRoutes from "./routes/medicalRecords.js";
 import prescriptionsRoutes from "./routes/prescriptions.js";
+import patientRoutes from "./routes/patients.js";
 const { Pool } = pkg;
 
 const pool = new Pool({
@@ -26,6 +27,7 @@ app.use("/auth", authRoutes);
 app.use("/appointments", appointmentRoutes);
 app.use("/medical-records", medicalRecordsRoutes);
 app.use("/prescriptions", prescriptionsRoutes);
+app.use("/patients", patientRoutes);
 console.log("DATABASE_URL:", process.env.DATABASE_URL);
 
 (async () => {
