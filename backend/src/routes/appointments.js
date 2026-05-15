@@ -86,7 +86,30 @@ const isHighRisk = reason
           reason || null
         ]
       );
-
+if (isHighRisk) {
+  await pool.query(
+    `
+    INSERT INTO doctor_alerts
+    (
+      doctor_id,
+      patient_id,
+      appointment_id,
+      alert_type,
+      alert_message,
+      severity
+    )
+    VALUES ($1, $2, $3, $4, $5, $6)
+    `,
+    [
+      doctor_id,
+      patient_id,
+      newAppointment.rows[0].id,
+      "high_risk_symptom",
+      "URGENT: High-risk patient case detected",
+      "high"
+    ]
+  );
+}
       res.status(201).json({
   message: isHighRisk
     ? "Appointment booked successfully - HIGH RISK ALERT"
@@ -261,6 +284,49 @@ router.patch(
       console.error("UPDATE APPOINTMENT ERROR:", error);
       res.status(500).json({
         message: "Failed to update appointment",
+        error: error.message,
+      });
+    }
+  }
+);
+router.get(
+  "/alerts",
+  authMiddleware,
+  doctorOnly,
+  async (req, res) => {
+    try {
+      const doctorResult = await pool.query(
+        "SELECT id FROM doctors WHERE user_id = $1",
+        [req.user.id]
+      );
+
+      if (doctorResult.rows.length === 0) {
+        return res.status(404).json({
+          message: "Doctor profile not found",
+        });
+      }
+
+      const doctor_id = doctorResult.rows[0].id;
+
+      const alerts = await pool.query(
+        `
+        SELECT *
+        FROM doctor_alerts
+        WHERE doctor_id = $1
+        ORDER BY created_at DESC
+        `,
+        [doctor_id]
+      );
+
+      res.json({
+        message: "Doctor alerts retrieved successfully",
+        alerts: alerts.rows,
+      });
+
+    } catch (error) {
+      console.error("GET ALERTS ERROR:", error);
+      res.status(500).json({
+        message: "Failed to retrieve alerts",
         error: error.message,
       });
     }
