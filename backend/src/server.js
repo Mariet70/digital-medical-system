@@ -12,6 +12,7 @@ import medicalRecordsRoutes from "./routes/medicalRecords.js";
 import prescriptionsRoutes from "./routes/prescriptions.js";
 import patientRoutes from "./routes/patients.js";
 import dashboardRoutes from "./routes/dashboard.js";
+import messagesRoutes from "./routes/messages.js";
 const { Pool } = pkg;
 
 const pool = new Pool({
@@ -30,6 +31,7 @@ app.use("/medical-records", medicalRecordsRoutes);
 app.use("/prescriptions", prescriptionsRoutes);
 app.use("/patients", patientRoutes);
 app.use("/dashboard", dashboardRoutes);
+app.use("/messages", messagesRoutes);
 console.log("DATABASE_URL:", process.env.DATABASE_URL);
 
 (async () => {
